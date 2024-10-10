@@ -3,8 +3,9 @@ import { supabase } from '../supabaseClient';
 import { Product } from '../models/product';
 import { methodType } from '../utils';
 import { failedResponse, successResponse } from '../utils/ResponseHelper';
+import { RequestWithUser } from '../types/types';
 
-export const getProducts: methodType = async (req: Request, res: Response) => {
+export const getProducts: methodType = async (req: RequestWithUser, res: Response) => {
   try {
     // Get all products
     const { data: products, error: productsError } = await supabase
@@ -34,7 +35,7 @@ export const getProducts: methodType = async (req: Request, res: Response) => {
   }
 };
 
-export const createProduct: methodType = async (req: Request, res: Response) => {
+export const createProduct: methodType = async (req: RequestWithUser, res: Response) => {
   const { name, price, description, stock } = req.body;
   const images = req.files as Express.Multer.File[]; // Mendapatkan file yang di-upload
 
@@ -69,7 +70,7 @@ export const createProduct: methodType = async (req: Request, res: Response) => 
   }
 };
 
-export const updateProduct: methodType = async (req: Request, res: Response) => {
+export const updateProduct: methodType = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   const { name, price, description, stock } = req.body;
   const images = req.files as Express.Multer.File[];
@@ -117,7 +118,7 @@ export const updateProduct: methodType = async (req: Request, res: Response) => 
 };
 
 // Get detail of a single product by ID including images
-export const getProductDetail: methodType = async (req: Request, res: Response) => {
+export const getProductDetail: methodType = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
     // Fetch the product details
@@ -145,7 +146,7 @@ export const getProductDetail: methodType = async (req: Request, res: Response) 
 };
 
 // Delete a product by ID and its images
-export const deleteProduct: methodType = async (req: Request, res: Response) => {
+export const deleteProduct: methodType = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
     // Delete the images related to the product
