@@ -1,0 +1,1 @@
+export type methodType = Response | any | void;
