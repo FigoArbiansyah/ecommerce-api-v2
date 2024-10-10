@@ -1,5 +1,3 @@
-// src/types/types.ts
-
 export interface User {
   id: number;           // ID pengguna
   email: string;       // Alamat email pengguna
