@@ -5,10 +5,10 @@ import authenticate from '../middlewares/authMiddleware';
 
 const router = express.Router();
 
-router.get('/', authenticate(['customer', 'admin']), getProducts);
+router.get('/', getProducts);
 router.post('/', authenticate(['customer', 'admin']), upload.array('images'), createProduct);
-router.get('/:id', authenticate(['customer', 'admin']), getProductDetail);
+router.get('/:id', getProductDetail);
 router.put('/:id', authenticate(['customer', 'admin']), upload.array('images'), updateProduct);
-router.delete('/:id', authenticate(['customer', 'admin']), deleteProduct);
+router.delete('/:id', deleteProduct);
 
 export default router;
