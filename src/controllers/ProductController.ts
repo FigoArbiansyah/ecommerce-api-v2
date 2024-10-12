@@ -10,9 +10,11 @@ export const getProducts: methodType = async (req: RequestWithUser, res: Respons
     const limit = _parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
+    // Fetch only products that are not soft deleted (deleted_at is NULL)
     const { data: products, error: productsError, count: total } = await supabase
       .from('products')
-      .select('*', { count: 'exact' })
+      .select('id, name, description, price, stock, created_at, updated_at', { count: 'exact' })
+      .is('deleted_at', null) // Only select products where deleted_at is null
       .range(offset, offset + limit - 1);
 
     if (productsError) return res.status(500).json(failedResponse('Terjadi kesalahan', productsError.message));
@@ -32,13 +34,12 @@ export const getProducts: methodType = async (req: RequestWithUser, res: Respons
       return { ...product, images: productImages };
     });
 
-    // Return paginated result
     return res.status(200).json(successResponse({
       products: productsWithImages,
-      total, // Total number of products in the database
-      page, // Current page
-      limit, // Items per page
-      totalPages: Math.ceil((total!) / limit), // Total number of pages
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total! / limit),
     }, 'Products fetched successfully'));
   } catch (err) {
     return res.status(500).json(failedResponse('Terjadi kesalahan', 'Terjadi kesalahan'));
@@ -159,23 +160,32 @@ export const getProductDetail: methodType = async (req: RequestWithUser, res: Re
 export const deleteProduct: methodType = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
-    // Delete the images related to the product
-    const { error: deleteImagesError } = await supabase
-      .from('product_images')
-      .delete()
-      .eq('product_id', id);
-
-    if (deleteImagesError) return res.status(500).json(failedResponse('Terjadi kesalahan', 'Failed to delete images'));
-
-    // Delete the product itself
+    // Soft delete the product by setting deleted_at to current timestamp
     const { data, error } = await supabase
       .from('products')
-      .delete()
+      .update({ deleted_at: new Date() }) // Update deleted_at column with the current date
       .eq('id', id);
 
     if (error) return res.status(500).json(failedResponse('Terjadi kesalahan', error.message));
-    return res.status(200).json(successResponse(data, 'Product deleted successfully'));
+    return res.status(200).json(successResponse(data, 'Product soft deleted successfully'));
   } catch (err) {
     return res.status(500).json(failedResponse('Terjadi kesalahan', 'Something went wrong'));
   }
 };
+
+export const restoreProduct: methodType = async (req: RequestWithUser, res: Response) => {
+  const { id } = req.params;
+  try {
+    // Restore the product by setting deleted_at to NULL
+    const { data, error } = await supabase
+      .from('products')
+      .update({ deleted_at: null }) // Set deleted_at to null
+      .eq('id', id);
+
+    if (error) return res.status(500).json(failedResponse('Terjadi kesalahan', error.message));
+    return res.status(200).json(successResponse(data, 'Product restored successfully'));
+  } catch (err) {
+    return res.status(500).json(failedResponse('Terjadi kesalahan', 'Something went wrong'));
+  }
+};
+
