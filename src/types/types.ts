@@ -5,11 +5,12 @@ export interface User {
 }
 
 export interface RequestWithUser extends Request {
-  user: string // or any other type
+  user: any;
   headers: any;
   body: any;
-  params: any;
-  files: any;
-  get: any;
-  protocol: any;
+  query: any;
+  params: Record<string, string>; // Params biasanya berupa key-value string
+  files?: Express.Multer.File[]; // Jika menggunakan file upload
+  get: (name: string) => string | undefined; // Sesuai dengan definisi get pada express
+  protocol: 'http' | 'https'; // Protokol HTTP atau HTTPS
 }
