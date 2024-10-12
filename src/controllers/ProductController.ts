@@ -1,16 +1,19 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { supabase } from '../supabaseClient';
-import { Product } from '../models/product';
-import { methodType } from '../utils';
+import { _parseInt, methodType } from '../utils';
 import { failedResponse, successResponse } from '../utils/ResponseHelper';
 import { RequestWithUser } from '../types/types';
 
 export const getProducts: methodType = async (req: RequestWithUser, res: Response) => {
   try {
-    // Get all products
-    const { data: products, error: productsError } = await supabase
+    const page = _parseInt(req.query.page) || 1;
+    const limit = _parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const { data: products, error: productsError, count: total } = await supabase
       .from('products')
-      .select('*');
+      .select('*', { count: 'exact' })
+      .range(offset, offset + limit - 1);
 
     if (productsError) return res.status(500).json(failedResponse('Terjadi kesalahan', productsError.message));
 
@@ -29,7 +32,14 @@ export const getProducts: methodType = async (req: RequestWithUser, res: Respons
       return { ...product, images: productImages };
     });
 
-    return res.status(200).json(successResponse(productsWithImages, 'Products fetched successfully'));
+    // Return paginated result
+    return res.status(200).json(successResponse({
+      products: productsWithImages,
+      total, // Total number of products in the database
+      page, // Current page
+      limit, // Items per page
+      totalPages: Math.ceil((total!) / limit), // Total number of pages
+    }, 'Products fetched successfully'));
   } catch (err) {
     return res.status(500).json(failedResponse('Terjadi kesalahan', 'Terjadi kesalahan'));
   }
