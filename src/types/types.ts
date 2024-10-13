@@ -5,7 +5,7 @@ export interface User {
 }
 
 export interface RequestWithUser extends Request {
-  user: any;
+  user?: any;
   headers: any;
   body: any;
   query: any;
