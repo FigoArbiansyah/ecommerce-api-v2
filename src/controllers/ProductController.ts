@@ -4,7 +4,7 @@ import { _parseInt } from '../utils';
 import { failedResponse, successResponse } from '../utils/ResponseHelper';
 import { RequestWithUser } from '../types/types';
 
-export const getProducts = async (req: RequestWithUser, res: Response) => {
+export const getProducts: any = async (req: RequestWithUser, res: Response) => {
   try {
     const page = _parseInt(req.query.page) || 1;
     const limit = _parseInt(req.query.limit) || 10;
@@ -43,7 +43,7 @@ export const getProducts = async (req: RequestWithUser, res: Response) => {
   }
 };
 
-export const createProduct = async (req: RequestWithUser, res: Response) => {
+export const createProduct: any = async (req: RequestWithUser, res: Response) => {
   const { name, price, description, stock } = req.body;
   const images = req.files as Express.Multer.File[]; // Mendapatkan file yang di-upload
 
@@ -78,7 +78,7 @@ export const createProduct = async (req: RequestWithUser, res: Response) => {
   }
 };
 
-export const updateProduct = async (req: RequestWithUser, res: Response) => {
+export const updateProduct: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   const { name, price, description, stock } = req.body;
   const images = req.files as Express.Multer.File[];
@@ -126,7 +126,7 @@ export const updateProduct = async (req: RequestWithUser, res: Response) => {
 };
 
 // Get detail of a single product by ID including images
-export const getProductDetail = async (req: RequestWithUser, res: Response) => {
+export const getProductDetail: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
     // Fetch the product details
@@ -154,7 +154,7 @@ export const getProductDetail = async (req: RequestWithUser, res: Response) => {
 };
 
 // Delete a product by ID and its images
-export const deleteProduct = async (req: RequestWithUser, res: Response) => {
+export const deleteProduct: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
     // Soft delete the product by setting deleted_at to current timestamp
@@ -170,7 +170,7 @@ export const deleteProduct = async (req: RequestWithUser, res: Response) => {
   }
 };
 
-export const restoreProduct = async (req: RequestWithUser, res: Response) => {
+export const restoreProduct: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
     // Restore the product by setting deleted_at to NULL
