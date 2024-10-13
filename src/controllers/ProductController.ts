@@ -13,29 +13,16 @@ export const getProducts: methodType = async (req: RequestWithUser, res: Respons
     // Fetch only products that are not soft deleted (deleted_at is NULL)
     const { data: products, error: productsError, count: total } = await supabase
       .from('products')
-      .select('id, name, description, price, stock, created_at, updated_at', { count: 'exact' })
+      .select('id, name, description, price, stock, created_at, updated_at, product_images (id, image_url)', { count: 'exact' })
       .is('deleted_at', null) // Only select products where deleted_at is null
       .range(offset, offset + limit - 1);
 
-    if (productsError) return res.status(500).json(failedResponse('Terjadi kesalahan', productsError.message));
-
-    // Get all images for all products
-    const { data: images, error: imagesError } = await supabase
-      .from('product_images')
-      .select('*');
-
-    if (imagesError) return res.status(500).json(failedResponse('Terjadi kesalahan', 'Failed to load images'));
-
-    // Map each product to its corresponding images
-    const productsWithImages = products.map((product) => {
-      const productImages = images
-        .filter((img) => img.product_id === product.id)
-        .map((img) => img.image_url);
-      return { ...product, images: productImages };
-    });
+    if (productsError) {
+      return res.status(500).json(failedResponse('Terjadi kesalahan', productsError.message));
+    }
 
     return res.status(200).json(successResponse({
-      products: productsWithImages,
+      products,
       total,
       page,
       limit,
