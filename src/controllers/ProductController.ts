@@ -10,12 +10,22 @@ export const getProducts: methodType = async (req: RequestWithUser, res: Respons
     const limit = _parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
-    // Fetch only products that are not soft deleted (deleted_at is NULL)
-    const { data: products, error: productsError, count: total } = await supabase
+    // Get the search query from the request
+    const searchQuery = req.query.q ? (req.query.q as string).toLowerCase() : null;
+
+    let query = supabase
       .from('products')
       .select('id, name, description, price, stock, created_at, updated_at, product_images (id, image_url)', { count: 'exact' })
       .is('deleted_at', null) // Only select products where deleted_at is null
       .range(offset, offset + limit - 1);
+
+    // Apply search filter if 'q' is present in query params
+    if (searchQuery) {
+      query = query.ilike('name', `%${searchQuery}%`);
+        // .or(`description.ilike.%${searchQuery}%`);
+    }
+
+    const { data: products, error: productsError, count: total } = await query;
 
     if (productsError) {
       return res.status(500).json(failedResponse('Terjadi kesalahan', productsError.message));
