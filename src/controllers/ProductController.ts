@@ -10,19 +10,16 @@ export const getProducts: any = async (req: RequestWithUser, res: Response) => {
     const limit = _parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
-    // Get the search query from the request
     const searchQuery = req.query.q ? (req.query.q as string).toLowerCase() : null;
 
     let query = supabase
       .from('products')
-      .select('id, name, description, price, stock, created_at, updated_at, product_images (id, image_url)', { count: 'exact' })
-      .is('deleted_at', null) // Only select products where deleted_at is null
+      .select('id, name, description, price, stock, category_id, created_at, updated_at, product_images (id, image_url)', { count: 'exact' })
+      .is('deleted_at', null)
       .range(offset, offset + limit - 1);
 
-    // Apply search filter if 'q' is present in query params
     if (searchQuery) {
       query = query.ilike('name', `%${searchQuery}%`);
-        // .or(`description.ilike.%${searchQuery}%`);
     }
 
     const { data: products, error: productsError, count: total } = await query;
@@ -44,25 +41,23 @@ export const getProducts: any = async (req: RequestWithUser, res: Response) => {
 };
 
 export const createProduct: any = async (req: RequestWithUser, res: Response) => {
-  const { name, price, description, stock } = req.body;
-  const images = req.files as Express.Multer.File[]; // Mendapatkan file yang di-upload
+  const { name, price, description, stock, category_id } = req.body;
+  const images = req.files as Express.Multer.File[];
 
   try {
-    // Insert new product into the products table
     const { data: product, error: productError } = await supabase
       .from('products')
-      .insert([{ name, price, description, stock }])
+      .insert([{ name, price, description, stock, category_id }])
       .select('*')
       .single();
 
     if (productError) return res.status(500).json(failedResponse('Terjadi kesalahan', productError.message));
 
-    // If images were uploaded, save image information
     if (images && images.length > 0) {
-      const host = req.protocol + '://' + req.get('host'); // Mendapatkan host dan protokol
+      const host = req.protocol + '://' + req.get('host');
       const newImages = images.map((file) => ({
         product_id: product.id,
-        image_url: `${host}/uploads/${file.filename}`, // Membangun URL gambar
+        image_url: `${host}/uploads/${file.filename}`,
       }));
 
       const { error: imageError } = await supabase
@@ -80,25 +75,22 @@ export const createProduct: any = async (req: RequestWithUser, res: Response) =>
 
 export const updateProduct: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
-  const { name, price, description, stock } = req.body;
+  const { name, price, description, stock, category_id } = req.body;
   const images = req.files as Express.Multer.File[];
 
   try {
-    // Update the product details
     const { data: product, error: productError } = await supabase
       .from('products')
-      .update({ name, price, description, stock })
+      .update({ name, price, description, stock, category_id })
       .eq('id', id)
       .select('*')
       .single();
 
     if (productError || !product) return res.status(404).json(failedResponse('Product not found', 'Product not found'));
 
-    // If there are new images, delete old images and save the new ones
     if (images && images.length > 0) {
-      const host = req.protocol + '://' + req.get('host'); // Mendapatkan host dan protokol
+      const host = req.protocol + '://' + req.get('host');
 
-      // Delete existing images
       const { error: deleteError } = await supabase
         .from('product_images')
         .delete()
@@ -106,10 +98,9 @@ export const updateProduct: any = async (req: RequestWithUser, res: Response) =>
 
       if (deleteError) return res.status(500).json(failedResponse('Terjadi kesalahan', 'Failed to update images'));
 
-      // Save new images
       const newImages = images.map((file) => ({
         product_id: id,
-        image_url: `${host}/uploads/${file.filename}`, // Membangun URL gambar
+        image_url: `${host}/uploads/${file.filename}`,
       }));
 
       const { error: insertError } = await supabase
@@ -125,11 +116,9 @@ export const updateProduct: any = async (req: RequestWithUser, res: Response) =>
   }
 };
 
-// Get detail of a single product by ID including images
 export const getProductDetail: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
-    // Fetch the product details
     const { data: product, error: productError } = await supabase
       .from('products')
       .select('*')
@@ -138,7 +127,6 @@ export const getProductDetail: any = async (req: RequestWithUser, res: Response)
 
     if (productError) return res.status(404).json(failedResponse('Product not found', 'Product not found'));
 
-    // Fetch the images related to the product
     const { data: images, error: imagesError } = await supabase
       .from('product_images')
       .select('image_url')
@@ -146,21 +134,18 @@ export const getProductDetail: any = async (req: RequestWithUser, res: Response)
 
     if (imagesError) return res.status(500).json(failedResponse('Terjadi kesalahan', 'Failed to load images'));
 
-    // Combine product data and images
     return res.status(200).json(successResponse({ ...product, images }, 'Product details fetched successfully'));
   } catch (err) {
     return res.status(500).json(failedResponse('Terjadi kesalahan', 'Something went wrong'));
   }
 };
 
-// Delete a product by ID and its images
 export const deleteProduct: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
-    // Soft delete the product by setting deleted_at to current timestamp
     const { data, error } = await supabase
       .from('products')
-      .update({ deleted_at: new Date() }) // Update deleted_at column with the current date
+      .update({ deleted_at: new Date() })
       .eq('id', id);
 
     if (error) return res.status(500).json(failedResponse('Terjadi kesalahan', error.message));
@@ -173,10 +158,9 @@ export const deleteProduct: any = async (req: RequestWithUser, res: Response) =>
 export const restoreProduct: any = async (req: RequestWithUser, res: Response) => {
   const { id } = req.params;
   try {
-    // Restore the product by setting deleted_at to NULL
     const { data, error } = await supabase
       .from('products')
-      .update({ deleted_at: null }) // Set deleted_at to null
+      .update({ deleted_at: null })
       .eq('id', id);
 
     if (error) return res.status(500).json(failedResponse('Terjadi kesalahan', error.message));
@@ -185,4 +169,3 @@ export const restoreProduct: any = async (req: RequestWithUser, res: Response) =
     return res.status(500).json(failedResponse('Terjadi kesalahan', 'Something went wrong'));
   }
 };
-
