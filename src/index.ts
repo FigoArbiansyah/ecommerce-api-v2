@@ -2,9 +2,12 @@ import express, { Application } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import { uploadsDir } from './config/multerConfig';
+
+// Routes
 import authRoutes from './routes/authRoutes';
 import productRoutes from './routes/productRoutes';
-import { uploadsDir } from './config/multerConfig';
+import categoryRoutes from './routes/categoryRoutes';
 
 dotenv.config();
 
@@ -21,6 +24,7 @@ app.use('/uploads', express.static(uploadsDir));
 // Routes
 app.use('/api', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
